@@ -5,7 +5,10 @@ import '../models/lyrics.dart';
 /// the app's online fallback catches up. Replace this file with a real
 /// source once the catalogue supports the song.
 class LocalLyrics {
-  static Lyrics panaginipNicole() => Lyrics.literal(_lrc);
+  /// Timed, not plain text: the player highlights the line that is playing
+  /// instead of showing raw "[00:30.53]" markers.
+  static Lyrics panaginipNicole() =>
+      Lyrics.parse(_lrc) ?? Lyrics.literal(_lrc);
 
   static const _lrc = '''
 [00:30.53] Bawat pikit ng aking mata, tanging ikaw nakikita

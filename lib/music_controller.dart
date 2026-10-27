@@ -70,6 +70,40 @@ class MusicController extends ChangeNotifier {
     return author.isEmpty ? name : '$name|$author';
   }
 
+  /// The bundled words for [track], when the song is one the public databases
+  /// do not cover. Downloads are named and tagged inconsistently —
+  /// "Panaginip", "Panaginip - Nicole", "Panaginip (Lyrics)_1792127346539"
+  /// with no artist — and "A - B" is read as artist - title, which turns
+  /// "Panaginip - Nicole" into the wrong half. So every reading of the name is
+  /// compared against the bundled title.
+  static Lyrics? _bundledLyricsFor(Track track) {
+    final exact = _bundledLyrics[_titleArtistKey(track)];
+    if (exact != null) return exact;
+
+    final readings = <String>{
+      _bundleWord(LyricsQuery.cleanText(track.title)),
+      _bundleWord(LyricsQuery.from(track).title),
+      for (final half in track.title.split(RegExp(r'\s+[-–—]\s+')))
+        _bundleWord(LyricsQuery.cleanText(half)),
+    }..removeWhere((word) => word.isEmpty);
+
+    for (final entry in _bundledLyrics.entries) {
+      final separator = entry.key.indexOf('|');
+      final bundledTitle = _bundleWord(
+        separator < 0 ? entry.key : entry.key.substring(0, separator),
+      );
+      if (bundledTitle.isNotEmpty && readings.contains(bundledTitle)) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
+  /// Lower-cased words only, so "Panaginip (Lyrics)_1792" and "panaginip"
+  /// compare equal.
+  static String _bundleWord(String value) =>
+      value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
+
   Lyrics? _lyrics;
   bool _lyricsLoading = false;
   String? _lyricsTrackId;
@@ -309,7 +343,7 @@ class MusicController extends ChangeNotifier {
     // cover), then the online chain: LRCLIB (timed) → Genius → lyrics.ovh
     // (plain). Either way, a hit is cached locally so the app keeps it offline.
     if (result == null && !track.demo) {
-      final local = _bundledLyrics[_favoriteKey(track)];
+      final local = _bundledLyricsFor(track);
       if (local != null) {
         result = local;
       } else {

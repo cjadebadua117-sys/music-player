@@ -495,6 +495,36 @@ void main() {
       expect(lookup.calls, 0);
     });
 
+    test('bundled words fill in for a song the databases do not cover', () async {
+      // A song added from Downloads usually looks like this: the artist is
+      // missing and the download noise is still on the title.
+      final lookup = FakeLyricsLookup();
+      final scanner = FakeScanner(
+        songs: [
+          mediaStoreTrack(
+            1,
+            title: 'Panaginip - Nicole (Lyrics)_1792127346539',
+            artist: 'Unknown artist',
+          ),
+        ],
+      );
+
+      final controller = await _readyController(
+        FakeEngine(),
+        scanner: scanner,
+        lyrics: FakeLyrics(lyrics: null),
+        lyricsLookup: lookup,
+      );
+      await settle();
+
+      final lyrics = controller.lyrics;
+      expect(lyrics, isNotNull, reason: 'the song ships with verified words');
+      final text =
+          lyrics!.text ?? lyrics.lines.map((line) => line.text).join('\n');
+      expect(text, contains('Bawat pikit ng aking mata'));
+      expect(lookup.calls, 0, reason: 'bundled lyrics need no connection');
+    });
+
     test('reloadLyrics retries a failed download', () async {
       final lookup = FakeLyricsLookup(
         lyrics: Lyrics.parse('[00:01.00]Found on retry')!,

@@ -1,13 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player/app/local_lyrics.dart';
-import 'package:music_player/models/lyrics.dart';
 
 void main() {
   test('bundled local lyrics cover Panaginip — Nicole', () {
     final lyrics = LocalLyrics.panaginipNicole();
     expect(lyrics, isNotNull);
 
-    final text = lyrics!.text ?? lyrics.lines.map((l) => l.text).join('\n');
+    final text = lyrics.text ?? lyrics.lines.map((l) => l.text).join('\n');
     expect(text, isNotEmpty);
     expect(text, contains('Bawat pikit ng aking mata'));
     expect(text, contains('Parang panaginip'));
@@ -30,7 +29,9 @@ void main() {
 
   test('the bundled song is complete enough to play through the ending', () {
     final lyrics = LocalLyrics.panaginipNicole();
-    final text = lyrics!.text ?? '';
+    final text = lyrics.text ?? lyrics.lines.map((l) => l.text).join('\n');
     expect(text.length, greaterThan(350));
+    // It must be syncable, or the player would print the timestamps.
+    expect(lyrics.isTimed, isTrue);
   });
 }
